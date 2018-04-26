@@ -28,7 +28,7 @@ You can config the parameters with command line args or enviroment variables or 
 
 - **distdir**: 图片目标文件夹
 
-- resizemethod: 可选参数。缩放裁剪方式，支持的参数有 resize method, support scale_width, scale_height, fit, cover,thumb. 具体参见  https://tinypng.com/developers/reference/nodejs .
+- resizemethod: 可选参数。缩放裁剪方式，支持的参数有 resize method, support scale_width, scale_height, fit, cover,thumb. 具体参见  https://tinypng.com/developers/reference/nodejs . **除非你需要缩放图片，否则不要设置这个参数。**
 
 - width: 可选参数，宽度
 
@@ -45,14 +45,13 @@ You can config the parameters with command line args or enviroment variables or 
 
 - **distdir**: dist folder to storage the compressed pictures.
 
-- resizemethod: resize method, support scale_width, scale_height, fit, cover,thumb. The detail refer to https://tinypng.com/developers/reference/nodejs ; Optional.
+- resizemethod: resize method, support scale_width, scale_height, fit, cover,thumb. The detail refer to https://tinypng.com/developers/reference/nodejs ; Optional. **Do not set this parameter unless you want resize your pictures.**
 
 - width: resized with width. Optional.
 
 - height: resized with height. Optional.
 
-
-## about tinyPNG / tinyJPG
+## about tinyPNG / tinyJPG
 
 tinyPNG/tinyJPG 是一个免费的压缩图片的服务，您可以直接在他们的网站上使用服务。 https://tinypng.com/ 或者 https://tinyjpg.com/ 。 您也可以从 https://tinypng.com/developers 申请免费的 API Key 来使用我这个工具，或者基于官方 API 接口来写一个顺手的工具。当然，免费的 key 每个月只有 500 次压缩/缩放图片的限额。
 
