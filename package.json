@@ -1,0 +1,29 @@
+{
+    "name": "tinify-node",
+    "version": "1.0.0",
+    "description": "TinyPNG/TinyJPG command line tools, which can switch multiple tinify api keys by your config. And also can resize the images during the compressing.",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "tinyPNG",
+        "tinyJPG",
+        "picture",
+        "image",
+        "compress",
+        "resize"
+    ],
+    "author": {
+        "name": "Kenn Zhang"
+    },
+    "license": "MIT",
+    "dependencies": {
+        "nconf": "^0.10.0",
+        "promise": "^8.0.1",
+        "tinify": "^1.5.0"
+    },
+    "devDependencies": {
+        "@types/node": "^9.6.6"
+    }
+}

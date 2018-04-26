@@ -1,3 +1,5 @@
+config.json
+
 # Logs
 logs
 *.log
@@ -57,3 +59,5 @@ typings/
 # dotenv environment variables file
 .env
 
+source
+dist
