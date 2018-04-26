@@ -55,4 +55,4 @@ You can config the parameters with command line args or enviroment variables or 
 
 tinyPNG/tinyJPG 是一个免费的压缩图片的服务，您可以直接在他们的网站上使用服务。 https://tinypng.com/ 或者 https://tinyjpg.com/ 。 您也可以从 https://tinypng.com/developers 申请免费的 API Key 来使用我这个工具，或者基于官方 API 接口来写一个顺手的工具。当然，免费的 key 每个月只有 500 次压缩/缩放图片的限额。
 
-tinyPNG is a free service, you can compress your picture from the web portal https://tinypng.com/ or https://tinyjpg.com/ . You can also request a free api key from https://tinypng.com/developers to use this tool, or write another better gear.
+tinyPNG is a free service, you can compress your picture from the web portal https://tinypng.com/ or https://tinyjpg.com/ . You can also request a free api key from https://tinypng.com/developers to use this tool, or write another better gear. (BTW: 500 images quota per month is free.)
