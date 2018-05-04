@@ -62,3 +62,5 @@ typings/
 source
 dist
 .vscode
+pics
+log

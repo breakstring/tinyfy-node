@@ -5,10 +5,13 @@ const tinify = require("tinify");
 const util = require("util");
 const Promise = require("promise");
 
-
-const keysMap = new Array();
-let keyPointer = -1;
-
+const keysMap = new Map();
+let keyIterator;
+let failedFileCount = 0;
+let successFileCount = 0;
+let skipedFileCount = 0;
+var currentKey;
+const timestamp = (new Date()).valueOf();
 const run = async() => {
     nconf.argv()
         .env({
@@ -19,17 +22,24 @@ const run = async() => {
         .required(["tinifykey", "sourcedir", "distdir"]);
 
     await checkKeys();
-    console.log(JSON.stringify(keysMap));
-    if (keysMap.length > 0) {
+    keyIterator = keysMap.entries();
+    const logfolder = path.resolve(".", "log");
+    if (fs.existsSync(logfolder) === false) {
+        fs.mkdirSync(logfolder);
+    }
+    if (keysMap.size > 0) {
+        console.log("Starting...........................");
+
         const currentPath = path.resolve(nconf.get("sourcedir"));
         const distPath = path.resolve(nconf.get("distdir"));
-        const currentKey = pickupKey();
-        tinify.key = currentKey;
-        console.log("Starting...........................");
-        processFolders(distPath, currentPath);
+        await processFolders(distPath, currentPath);
+
     } else {
         console.error("No valided tinify key, please request a tinify api key from https://tinypng.com/");
     }
+    console.log("Successed file count:" + successFileCount);
+    console.log("Failed file count:" + failedFileCount);
+    console.log("Skiped file count:" + skipedFileCount);
     process.exitCode = 0;
 }
 
@@ -40,16 +50,16 @@ async function checkKeys() {
         for (let index = 0; index < tinifykey.length; index++) {
             const element = tinifykey[index];
             try {
-                await verifyTinifyKey(element);
-                keysMap.push(element);
+                const kcount = await verifyTinifyKey(element);
+                keysMap.set(element, kcount);
             } catch (error) {
                 console.error(error);
             }
         }
     } else {
         try {
-            await verifyTinifyKey(tinifykey);
-            keysMap.push(tinifykey);
+            const kcount = await verifyTinifyKey(tinifykey);
+            keysMap.set(tinifykey, kcount);
         } catch (error) {
             console.error(error);
         }
@@ -60,6 +70,7 @@ async function processFolders(distPath, currentPath) {
     if (fs.existsSync(distPath) === false) {
         fs.mkdirSync(distPath);
     }
+
     const files = fs.readdirSync(currentPath);
     for (let index = 0; index < files.length; index++) {
         const sourceFile = path.resolve(currentPath, files[index]);
@@ -69,77 +80,102 @@ async function processFolders(distPath, currentPath) {
             if (elementExtention === ".png" || elementExtention === ".jpeg" || elementExtention === ".jpg") {
                 const distFile = path.resolve(distPath, files[index]);
                 try {
-                    const result = await processFile(sourceFile, distFile);
-                    console.log("ok:" + sourceFile);
+                    if (currentKey === undefined || (keysMap.get(currentKey) >= 500)) {
+                        currentKey = pickupNextKey();
+                    }
+
+                    if (currentKey === undefined) {
+                        console.error("No valided tinify key, please request a tinify api key from https://tinypng.com/");
+                        process.exitCode = 0;
+                    }
+                    tinify.key = currentKey;
+
+                    if (fs.existsSync(distFile)) {
+                        console.log(sourceFile + "......skiped.");
+                        fs.appendFileSync("./log/" + timestamp + "-skiped.txt", sourceFile + "\n");
+                        skipedFileCount++;
+                    } else {
+                        const result = await processFile(sourceFile, distFile);
+                        keysMap.set(currentKey, result);
+                        console.log(sourceFile + "......compressed.");
+                        fs.appendFileSync("./log/" + timestamp + "-compressed.txt", sourceFile + "\n");
+                        successFileCount++;
+                    }
+
                 } catch (error) {
-                    console.error("false:" + sourceFile + error);
-                    process.exitCode = 1;
+                    console.error(sourceFile + "......failed");
+                    fs.appendFileSync("./log/" + timestamp + "-failed.txt", sourceFile + "\n");
+                    failedFileCount++;
                 }
             }
         } else if (sourceState.isDirectory()) {
-            console.warn("处理目录：" + sourceFile);
             const subDist = path.resolve(distPath, files[index]);
             const subSource = path.resolve(currentPath, files[index]);
-            processFolders(subDist, subSource);
+            await processFolders(subDist, subSource);
         }
     }
 }
 
-function processFile(sourceFile, targetFile) {
-    return new Promise((resolve, reject) => {
-        const source = tinify.fromFile(sourceFile);
-        let tmp = source;
-        if (nconf.get("resizemethod")) {
-            const resizeParams = {
+async function processFile(sourceFile, targetFile) {
+    return await new Promise(function(resolve, reject) {
+        try {
+            const source = tinify.fromFile(sourceFile);
+            let tmp = source;
+            if (nconf.get("resizemethod")) {
+                const resizeParams = {
 
-            };
-            switch (nconf.get("resizemethod")) {
-                case "scale_width":
-                    resizeParams.method = "scale";
-                    resizeParams.width = nconf.get("width");
-                    break;
-                case "scale_height":
-                    resizeParams.method = "scale";
-                    resizeParams.height = nconf.get("height");
-                    break;
-                default:
-                    resizeParams.method = nconf.get("resizemethod");
-                    resizeParams.width = nconf.get("width");
-                    resizeParams.height = nconf.get("height");
-                    break;
-            }
-            tmp = source.resize(resizeParams);
-        }
-        tmp.toFile(targetFile)
-            .then(function(err) {
-                if (err) {
-                    if (err instanceof tinify.AccountError) {
-                        const newKey = pickupKey();
-                        if (newKey) {
-                            tinify.key = newKey;
-                            return processFile(sourceFile, targetFile);
-                        } else {
-                            reject("No more valided tinifykey");
-                        }
-                    } else {
-                        reject(err);
-                    }
-                } else {
-                    resolve();
+                };
+                switch (nconf.get("resizemethod")) {
+                    case "scale_width":
+                        resizeParams.method = "scale";
+                        resizeParams.width = nconf.get("width");
+                        break;
+                    case "scale_height":
+                        resizeParams.method = "scale";
+                        resizeParams.height = nconf.get("height");
+                        break;
+                    default:
+                        resizeParams.method = nconf.get("resizemethod");
+                        resizeParams.width = nconf.get("width");
+                        resizeParams.height = nconf.get("height");
+                        break;
                 }
-            })
+                tmp = source.resize(resizeParams);
+            }
+            tmp.toFile(targetFile)
+                .then((error) => {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        var compressionsThisMonth = tinify.compressionCount;
+                        resolve(compressionsThisMonth);
+                    }
+                });
+        } catch (error) {
+            reject(error);
+        }
 
     });
-}
 
-function pickupKey() {
-    keyPointer++;
-    if (keyPointer == keysMap.length) {
-        return undefined;
+
+
+};
+
+
+function pickupNextKey() {
+
+    // 如果为空 获取下一个
+    const currentKeyItem = keyIterator.next().value;
+    if (currentKeyItem) {
+        if (currentKeyItem["1"] < 500) {
+            return currentKeyItem["0"];
+        } else {
+            return pickupNextKey();
+        }
     } else {
-        console.info("Using key:" + keysMap[keyPointer]);
-        return keysMap[keyPointer];
+        return undefined;
     }
+
 }
 
 async function verifyTinifyKey(tk) {
@@ -150,9 +186,9 @@ async function verifyTinifyKey(tk) {
                 if (err) {
                     reject(err)
                 }
-                resolve();
+                var compressionsThisMonth = tinify.compressionCount;
+                resolve(compressionsThisMonth);
             });
-
         } catch (error) {
             reject(error);
         }
