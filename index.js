@@ -128,16 +128,16 @@ async function processFile(sourceFile, targetFile) {
                 switch (nconf.get("resizemethod")) {
                     case "scale_width":
                         resizeParams.method = "scale";
-                        resizeParams.width = nconf.get("width");
+                        resizeParams.width = Number.parseInt(nconf.get("width"));
                         break;
                     case "scale_height":
                         resizeParams.method = "scale";
-                        resizeParams.height = nconf.get("height");
+                        resizeParams.height = Number.parseInt(nconf.get("height"));
                         break;
                     default:
                         resizeParams.method = nconf.get("resizemethod");
-                        resizeParams.width = nconf.get("width");
-                        resizeParams.height = nconf.get("height");
+                        resizeParams.width = Number.parseInt(nconf.get("width"));
+                        resizeParams.height = Number.parseInt(nconf.get("height"));
                         break;
                 }
                 tmp = source.resize(resizeParams);
