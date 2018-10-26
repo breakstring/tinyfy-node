@@ -64,3 +64,4 @@ dist
 .vscode
 pics
 log
+imageconvert.sh
